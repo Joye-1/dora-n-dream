@@ -1,0 +1,12 @@
+node_modules
+dist
+.npm-cache
+.DS_Store
+.vercel
+.claude
+.npm-cache
+*.tsbuildinfo
+package-lock.json
+1
+data
+*.pdf

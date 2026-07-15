@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg: #ffffff;
+    --color-sidebar: #fbfbfa;
+    --color-text: #37352f;
+    --color-muted: #9b9a97;
+    --color-border: #e9e9e7;
+  }
+
+  .dark {
+    --color-bg: #191919;
+    --color-sidebar: #1a1a1a;
+    --color-text: #e5e5e5;
+    --color-muted: #6b6b6b;
+    --color-border: #2f2f2f;
+  }
+
+  body {
+    @apply bg-notion-bg dark:bg-notion-bg-dark text-notion-text dark:text-notion-text-dark;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer components {
+  .sidebar-link {
+    @apply flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium
+           text-slate-600 dark:text-slate-400
+           hover:bg-blue-100 dark:hover:bg-blue-900/50
+           hover:text-blue-700 dark:hover:text-blue-300
+           transition-colors duration-100;
+  }
+
+  .sidebar-link.active {
+    @apply bg-blue-100 dark:bg-blue-900/50
+           text-blue-700 dark:text-blue-300 font-semibold;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-md
+           bg-notion-accent text-white text-sm font-medium
+           hover:bg-notion-accent-hover transition-colors duration-100
+           focus:outline-none focus:ring-2 focus:ring-notion-accent/50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center px-3 py-1.5 rounded-md
+           text-notion-muted dark:text-notion-muted-dark text-sm font-medium
+           hover:bg-notion-border dark:hover:bg-notion-border-dark
+           hover:text-notion-text dark:hover:text-notion-text-dark
+           transition-colors duration-100;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2 rounded-md text-sm
+           bg-notion-bg dark:bg-notion-bg-dark
+           border border-notion-border dark:border-notion-border-dark
+           text-notion-text dark:text-notion-text-dark
+           placeholder:text-notion-muted dark:placeholder:text-notion-muted-dark
+           focus:outline-none focus:ring-2 focus:ring-notion-accent/50 focus:border-notion-accent
+           transition-colors duration-100;
+  }
+
+  .card {
+    @apply rounded-lg border border-notion-border dark:border-notion-border-dark
+           bg-notion-bg dark:bg-notion-bg-dark p-4;
+  }
+
+  .table-header {
+    @apply text-xs font-medium text-notion-muted dark:text-notion-muted-dark
+           uppercase tracking-wider px-3 py-2;
+  }
+
+  .table-cell {
+    @apply px-3 py-2.5 text-sm border-b border-notion-border dark:border-notion-border-dark;
+  }
+}

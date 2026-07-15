@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 240" fill="none">
+  <!-- 面包主体（方形面包片，顶部微弧） -->
+  <defs>
+    <linearGradient id="breadGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8C87A"/>
+      <stop offset="100%" stop-color="#D4A853"/>
+    </linearGradient>
+    <linearGradient id="crustGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C8923C"/>
+      <stop offset="100%" stop-color="#A0702A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 面包主体 -->
+  <rect x="50" y="40" width="140" height="120" rx="16" ry="16" fill="url(#breadGrad)" stroke="#C8923C" stroke-width="2.5"/>
+
+  <!-- 面包顶部弧线（面包皮） -->
+  <path d="M50 56C50 44 64 40 120 40C176 40 190 44 190 56" fill="url(#crustGrad)" stroke="#A0702A" stroke-width="2"/>
+
+  <!-- 面包纹理 -->
+  <ellipse cx="120" cy="105" rx="55" ry="30" fill="none" stroke="#C8923C" stroke-width="0.8" opacity="0.4"/>
+  <ellipse cx="120" cy="105" rx="40" ry="20" fill="none" stroke="#C8923C" stroke-width="0.6" opacity="0.3"/>
+
+  <!-- 面包上的小孔（气孔） -->
+  <circle cx="90" cy="82" r="2" fill="#C8923C" opacity="0.4"/>
+  <circle cx="130" cy="75" r="1.5" fill="#C8923C" opacity="0.35"/>
+  <circle cx="105" cy="98" r="2.5" fill="#C8923C" opacity="0.3"/>
+  <circle cx="145" cy="90" r="1.8" fill="#C8923C" opacity="0.35"/>
+  <circle cx="78" cy="110" r="1.5" fill="#C8923C" opacity="0.3"/>
+  <circle cx="155" cy="115" r="2" fill="#C8923C" opacity="0.3"/>
+
+  <!-- 哆啦A梦蓝色圆手从右下角伸出来 -->
+  <circle cx="210" cy="185" r="30" fill="#4A9ED6" stroke="#2E7AB8" stroke-width="2.5"/>
+  <!-- 手的白色掌心 -->
+  <circle cx="210" cy="185" r="18" fill="white" opacity="0.9"/>
+  <!-- 手指线 -->
+  <line x1="210" y1="172" x2="210" y2="198" stroke="#4A9ED6" stroke-width="1.2" opacity="0.5"/>
+
+  <!-- 口袋（从手的位置延伸） -->
+  <path d="M170 195C170 175 185 165 210 168C235 165 250 175 250 195C250 210 235 215 210 215C185 215 170 210 170 195Z" fill="white" stroke="#4A9ED6" stroke-width="2.5"/>
+  <!-- 口袋开口弧线 -->
+  <path d="M175 193C185 186 200 183 210 183C220 183 235 186 245 193" fill="none" stroke="#4A9ED6" stroke-width="2"/>
+</svg>
