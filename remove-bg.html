@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>去背景 - 记忆面包</title>
+  <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/dist/bundle.iife.js"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; text-align: center; }
+    .drop-zone { border: 3px dashed #ccc; border-radius: 16px; padding: 60px 20px; cursor: pointer; margin: 20px 0; }
+    .drop-zone:hover { border-color: #4A9ED6; background: #f0f7ff; }
+    #result { margin-top: 20px; }
+    img { max-width: 300px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+    button { padding: 10px 24px; border-radius: 8px; border: none; background: #4A9ED6; color: #fff; font-size: 16px; cursor: pointer; margin: 8px; }
+    button:hover { background: #3A8EC6; }
+    button:disabled { background: #ccc; }
+    .note { color: #999; font-size: 14px; margin-top: 12px; }
+    #loading { display: none; color: #4A9ED6; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <h2>记忆面包去背景</h2>
+  <p>拖入或点击上传你的图片，自动抠掉背景</p>
+
+  <div class="drop-zone" id="dropZone">
+    📷 点击或拖入图片
+    <input type="file" accept="image/*" id="fileInput" hidden>
+  </div>
+
+  <div id="loading">⏳ 正在处理中，请稍候...</div>
+  <div id="result"></div>
+
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const loading = document.getElementById('loading');
+    const result = document.getElementById('result');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = '#4A9ED6'; });
+    dropZone.addEventListener('dragleave', () => dropZone.style.borderColor = '#ccc');
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.style.borderColor = '#ccc';
+      const file = e.dataTransfer.files[0];
+      if (file) processImage(file);
+    });
+
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) processImage(file);
+    });
+
+    async function processImage(file) {
+      loading.style.display = 'block';
+      result.innerHTML = '';
+
+      try {
+        const blob = await imglyRemoveBackground(file, {
+          model: 'isnet_quint8',
+          output: { format: 'image/png' }
+        });
+
+        const url = URL.createObjectURL(blob);
+        result.innerHTML = `
+          <h3>✅ 完成！</h3>
+          <img src="${url}" alt="去背景后">
+          <br>
+          <a href="${url}" download="memory-bread.png"><button>📥 下载 PNG</button></a>
+          <p class="note">下载后放到项目的 public/images/ 目录下，命名为 f.png</p>
+        `;
+      } catch (err) {
+        result.innerHTML = `<p style="color:red">处理失败：${err.message}</p>`;
+      }
+      loading.style.display = 'none';
+    }
+  </script>
+</body>
+</html>
