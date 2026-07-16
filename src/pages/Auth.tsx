@@ -24,15 +24,19 @@ export function Auth() {
       return;
     }
     setLoading(true);
-    const result = isLogin
-      ? await signIn(email, password)
-      : await signUp(email, password);
-    setLoading(false);
-
-    if (result.error) {
-      setError(result.error);
-    } else {
-      navigate("/", { replace: true });
+    try {
+      const result = isLogin
+        ? await signIn(email, password)
+        : await signUp(email, password);
+      setLoading(false);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        navigate("/", { replace: true });
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setError("网络连接失败，云同步服务暂不可用。请使用离线模式——数据会保存在本地浏览器中。");
     }
   };
 

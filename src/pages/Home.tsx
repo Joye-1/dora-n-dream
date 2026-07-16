@@ -6,22 +6,26 @@ import { DictationToggle } from "../components/DictationToggle";
 import { WordInput } from "../components/WordInput";
 import { WordTable } from "../components/WordTable";
 import { initDictionary, type DictEntry } from "../lib/dict";
-import { getToday } from "../lib/db";
+import { db, getToday, fixWordOrder } from "../lib/db";
+import { Search } from "lucide-react";
 
 export function Home() {
   const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
   const { todayWords, books, loadBooks, loadTodayWords, addWord } = useWordStore();
   const bookName = books.find((b) => b.id === bookId)?.name || "单词本";
-  const { mode, hideEnglish, hideChinese } = useDictationStore();
+  const { mode, hideEnglish, hideChinese, memoryTyping } = useDictationStore();
   const [selectedDate, setSelectedDate] = useState(getToday());
   const [hasWords, setHasWords] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [highlightWord, setHighlightWord] = useState("");
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     initDictionary();
     loadBooks();
+    fixWordOrder(); // 修复旧单词排序
   }, []);
 
   useEffect(() => {
@@ -46,6 +50,7 @@ export function Home() {
       collins: entry.collins || 0,
       bnc: entry.bnc || 0,
       frq: entry.frq || 0,
+      mnemonic: "",
     });
   };
 
@@ -54,16 +59,30 @@ export function Home() {
     setShowDatePicker(false);
   };
 
+  // 搜索单词
+  const handleSearch = async () => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q || !bookId) return;
+    const all = await db.dailyWords.where("bookId").equals(bookId).toArray();
+    const found = all.find((w) => w.word.toLowerCase() === q);
+    if (found) {
+      setSelectedDate(found.date);
+      setHighlightWord(found.word);
+      setSearchQuery("");
+      setTimeout(() => setHighlightWord(""), 2000);
+    } else {
+      alert(`未找到单词「${searchQuery.trim()}」`);
+    }
+  };
+
   return (
     <div>
-      {/* 顶部：日期选择 + 标题 */}
+      {/* 顶部：标题 + 搜索 + 日期 */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-notion-text dark:text-notion-text-dark">
             {bookName}
           </h1>
-
-          {/* 日期选择器 */}
           <div className="relative">
             <button
               onClick={() => {
@@ -89,25 +108,35 @@ export function Home() {
           </div>
         </div>
 
-        <span className="text-xs text-notion-muted">
-          {todayWords.length} 个单词
-        </span>
+        {/* 搜索框 */}
+        <div className="flex items-center gap-1.5">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            placeholder="搜索单词..."
+            className="input-field w-36 py-1 text-xs"
+          />
+          <button onClick={handleSearch} className="btn-ghost p-1.5">
+            <Search className="h-4 w-4" />
+          </button>
+          <span className="text-xs text-notion-muted">
+            {todayWords.length} 词
+          </span>
+        </div>
       </div>
 
-      {/* 单词输入 */}
       <WordInput onAdd={handleAddWord} />
-
-      {/* 工具栏：隐藏EN/CN + 听音 + 抽查 */}
       <DictationToggle />
-
-      {/* 单词列表 */}
       <WordTable
         words={todayWords}
         hideEnglish={hideEnglish}
         hideChinese={hideChinese}
+        memoryTyping={memoryTyping}
+        highlightWord={highlightWord}
         onWordClick={(word) => navigate(`/word/${encodeURIComponent(word)}`)}
       />
-
     </div>
   );
 }

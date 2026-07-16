@@ -69,6 +69,7 @@ export const useWordStore = create<WordState>((set, get) => ({
       .where("[bookId+date]")
       .equals([bookId, targetDate])
       .toArray();
+    words.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
     set({ todayWords: words, loading: false });
   },
 
@@ -78,12 +79,15 @@ export const useWordStore = create<WordState>((set, get) => ({
       .where("bookId")
       .equals(bookId)
       .toArray();
+    words.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
     set({ allWords: words, loading: false });
   },
 
   addWord: async (word) => {
-    const id = crypto.randomUUID();
-    const newWord = { ...word, id };
+    // 全局递增序号，确保顺序绝对正确
+    const all = await db.dailyWords.toArray();
+    const maxOrder = all.reduce((max, w) => Math.max(max, w.orderIndex || 0), 0);
+    const newWord = { ...word, id: crypto.randomUUID(), orderIndex: maxOrder + 1, createdAt: new Date().toISOString() };
     await db.dailyWords.put(newWord);
     set((state) => ({
       todayWords: [...state.todayWords, newWord],

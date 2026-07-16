@@ -1,11 +1,13 @@
 import { NavLink } from "react-router-dom";
 import { BookOpen, RotateCw, AlertCircle, BarChart3, Home } from "lucide-react";
+import { useProfileStore } from "../stores/profileStore";
 
 interface Props {
   bookId?: string;
 }
 
 export function Sidebar({ bookId }: Props) {
+  const { profileName } = useProfileStore();
   if (!bookId) return null;
 
   const navItems = [
@@ -43,7 +45,10 @@ export function Sidebar({ bookId }: Props) {
         ))}
       </nav>
 
-      <div className="border-t border-notion-border px-3 py-3 dark:border-notion-border-dark">
+      <div className="space-y-1 border-t border-blue-200 px-3 py-3 dark:border-blue-900">
+        <div className="rounded-md bg-blue-100 px-3 py-2 text-center text-xs text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+          👤 {profileName || "本地"}
+        </div>
         <NavLink to="/welcome" className="sidebar-link w-full text-xs">
           切换单词本
         </NavLink>

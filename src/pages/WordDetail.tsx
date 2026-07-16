@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Search, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Search, Trash2, Loader2, Brain, Network } from "lucide-react";
 import { PronunciationBtn } from "../components/PronunciationBtn";
 import { db, type WordPhrase, type WordSynonym } from "../lib/db";
 import { fetchWordDetails } from "../lib/api";
+import { findMnemonicAsync } from "../lib/wordroots";
 
 export function WordDetail() {
   const { word } = useParams<{ word: string }>();
@@ -23,13 +24,16 @@ export function WordDetail() {
     loadLocalData();
   }, [decodedWord]);
 
-  // 首次进入自动联网查询
+  // 首次进入自动联网查询（延迟确保 DOM ready）
   useEffect(() => {
     if (!autoLoaded && decodedWord) {
-      handleFetchOnline();
-      setAutoLoaded(true);
+      const timer = setTimeout(() => {
+        handleFetchOnline();
+        setAutoLoaded(true);
+      }, 500);
+      return () => clearTimeout(timer);
     }
-  }, [decodedWord, autoLoaded]);
+  }, [decodedWord]);
 
   const loadLocalData = async () => {
     const p = await db.wordPhrases.where("word").equals(decodedWord).toArray();
@@ -103,6 +107,12 @@ export function WordDetail() {
         <PronunciationBtn word={decodedWord} type={1} />
       </div>
 
+      {/* 联想记忆 */}
+      <MnemonicEditor word={decodedWord} />
+
+      {/* 单词家族 */}
+      <WordFamily word={decodedWord} />
+
       {/* 短语区 */}
       <section className="card mb-4">
         <div className="mb-3 flex items-center justify-between">
@@ -133,7 +143,13 @@ export function WordDetail() {
         {loading && phrases.length === 0 ? (
           <p className="text-sm text-notion-muted">联网查询中...</p>
         ) : phrases.length === 0 ? (
-          <p className="text-sm text-notion-muted">暂无短语，可手动添加或点击「联网查询」</p>
+          <p className="text-sm text-notion-muted">
+            暂无短语，可手动添加或查询：
+            <span className="flex flex-wrap gap-x-2 gap-y-1 mt-1">
+              <DictLink href={`https://dict.eudic.net/dicts/en/${encodeURIComponent(decodedWord)}`} label="欧陆词典" />
+              <DictLink href={`https://www.youdao.com/result?word=${encodeURIComponent(decodedWord)}&lang=en`} label="有道词典" />
+            </span>
+          </p>
         ) : (
           <ul className="space-y-2">
             {phrases.map((p) => (
@@ -169,7 +185,12 @@ export function WordDetail() {
         {loading && synonyms.length === 0 ? (
           <p className="text-sm text-notion-muted">联网查询中...</p>
         ) : synonyms.length === 0 ? (
-          <p className="text-sm text-notion-muted">暂无同义词</p>
+          <p className="text-sm text-notion-muted">
+            暂无同义词，可查询：
+            <span className="flex flex-wrap gap-x-2 gap-y-1 mt-1">
+              <DictLink href={`https://www.thesaurus.com/browse/${encodeURIComponent(decodedWord)}`} label="Thesaurus" />
+            </span>
+          </p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {synonyms.map((s) => (
@@ -182,5 +203,113 @@ export function WordDetail() {
         )}
       </section>
     </div>
+  );
+}
+
+/** 联想记忆：优先手写词库，算法兜底 */
+async function autoGenerateMnemonic(w: string): Promise<string> {
+  return findMnemonicAsync(w);
+}
+
+/** 联想记忆编辑器 */
+function MnemonicEditor({ word }: { word: string }) {
+  const [mnemonic, setMnemonic] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    db.dailyWords.where("word").equals(word).first().then(async (dw) => {
+      if (dw?.mnemonic) {
+        setMnemonic(dw.mnemonic);
+      } else {
+        const auto = await autoGenerateMnemonic(word);
+        if (auto) setMnemonic(auto);
+      }
+    });
+  }, [word]);
+
+  const handleSave = async () => {
+    const dw = await db.dailyWords.where("word").equals(word).first();
+    if (dw?.id) {
+      await db.dailyWords.update(dw.id, { mnemonic: mnemonic.trim() });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    }
+  };
+
+  return (
+    <section className="card mb-4">
+      <div className="mb-2 flex items-center gap-2">
+        <Brain className="h-4 w-4 text-purple-500" />
+        <h2 className="text-sm font-semibold">联想记忆</h2>
+      </div>
+      <div className="flex gap-2">
+        <textarea
+          className="input-field flex-1"
+          rows={2}
+          value={mnemonic}
+          onChange={(e) => setMnemonic(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSave(); } }}
+          placeholder="自动生成中..."
+        />
+        <button onClick={handleSave} className="btn-primary text-xs self-end">
+          {saved ? "已保存 ✓" : "保存"}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/** 单词家族：展示词性转换相关词 */
+function WordFamily({ word }: { word: string }) {
+  const [family, setFamily] = useState<Array<{ word: string; meaning: string }>>([]);
+
+  useEffect(() => {
+    fetch("/data/wordfamilies.json")
+      .then((r) => r.json())
+      .then((data) => {
+        const lower = word.toLowerCase();
+        // 查这个词本身和它的变形
+        const result = data[lower] || [];
+        // 也查是否作为派生词出现在其他词下
+        if (result.length === 0) {
+          for (const [base, derived] of Object.entries(data) as [string, any][]) {
+            if (derived.some((d: any) => d.word === lower)) {
+              result.push({ word: base, meaning: "原形" });
+              result.push(...derived.filter((d: any) => d.word !== lower));
+              break;
+            }
+          }
+        }
+        setFamily(result);
+      })
+      .catch(() => {});
+  }, [word]);
+
+  if (family.length === 0) return null;
+
+  return (
+    <section className="card mb-4">
+      <div className="mb-2 flex items-center gap-2">
+        <Network className="h-4 w-4 text-green-500" />
+        <h2 className="text-sm font-semibold">单词家族</h2>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {family.map((f, i) => (
+          <span key={i} className="rounded-full bg-green-50 px-3 py-1 text-sm dark:bg-green-900/30">
+            <span className="font-medium">{f.word}</span>
+            <span className="ml-1 text-xs text-notion-muted">{f.meaning}</span>
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** 词典链接小组件 */
+function DictLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a href={href} target="_blank" className="text-xs text-notion-accent hover:underline whitespace-nowrap">
+      {label} →
+    </a>
   );
 }

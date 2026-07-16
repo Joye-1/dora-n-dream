@@ -4,14 +4,42 @@ import { InlineDictation } from "./InlineDictation";
 import { PronunciationBtn } from "./PronunciationBtn";
 import { useWordStore } from "../stores/wordStore";
 
+function MemoryTypingInput({ word: target }: { word: string }) {
+  const [value, setValue] = useState("");
+  const [count, setCount] = useState(0);
+
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && value.trim()) {
+            setCount((c) => c + 1);
+            setValue("");
+          }
+        }}
+        placeholder="..."
+        className="input-field w-24 py-1 text-xs"
+        autoComplete="off"
+        spellCheck={false}
+      />
+      {count > 0 && <span className="text-xs text-notion-muted">×{count}</span>}
+    </div>
+  );
+}
+
 interface Props {
   words: DailyWord[];
   hideEnglish: boolean;
   hideChinese: boolean;
+  memoryTyping?: boolean;
+  highlightWord?: string;
   onWordClick: (word: string) => void;
 }
 
-export function WordTable({ words, hideEnglish, hideChinese, onWordClick }: Props) {
+export function WordTable({ words, hideEnglish, hideChinese, memoryTyping, highlightWord, onWordClick }: Props) {
   const { removeWord } = useWordStore();
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -59,6 +87,7 @@ export function WordTable({ words, hideEnglish, hideChinese, onWordClick }: Prop
             {showPhonetic && <th className="table-header text-left">音标</th>}
             <th className="table-header text-left">词性</th>
             {showChinese && <th className="table-header text-left">中文意思</th>}
+            {memoryTyping && <th className="table-header text-left">记忆输入</th>}
             {(hideEnglish || hideChinese) && <th className="table-header text-left">默写</th>}
           </tr>
         </thead>
@@ -66,7 +95,7 @@ export function WordTable({ words, hideEnglish, hideChinese, onWordClick }: Prop
           {words.map((word, index) => (
             <tr
               key={word.id}
-              className="group border-b border-notion-border transition-colors hover:bg-notion-sidebar dark:border-notion-border-dark dark:hover:bg-notion-sidebar-dark"
+              className={`group border-b border-notion-border transition-colors hover:bg-notion-sidebar dark:border-notion-border-dark dark:hover:bg-notion-sidebar-dark ${highlightWord === word.word ? "flash-highlight" : ""}`}
               onContextMenu={(e) => word.id && handleContextMenu(e, word.id)}
             >
               <td className="table-cell text-center text-xs text-notion-muted">
@@ -103,6 +132,12 @@ export function WordTable({ words, hideEnglish, hideChinese, onWordClick }: Prop
 
               {showChinese && (
                 <td className="table-cell">{word.translation}</td>
+              )}
+
+              {memoryTyping && (
+                <td className="table-cell min-w-[140px]">
+                  <MemoryTypingInput word={word.word} />
+                </td>
               )}
 
               {(hideEnglish || hideChinese) && (

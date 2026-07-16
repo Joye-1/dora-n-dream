@@ -1,4 +1,5 @@
-const DICT_API = "https://api.dictionaryapi.dev/api/v2/entries/en";
+// 使用 Vercel 服务端代理，避免国内浏览器直接访问被墙
+const DICT_API = "/api/dict";
 
 export interface DictAPIResult {
   word: string;
@@ -6,6 +7,7 @@ export interface DictAPIResult {
   phonetics: Array<{ text?: string; audio?: string }>;
   meanings: Array<{
     partOfSpeech: string;
+    synonyms: string[];
     definitions: Array<{
       definition: string;
       example?: string;
@@ -21,7 +23,7 @@ export interface WordDetails {
 
 export async function fetchWordDetails(word: string): Promise<WordDetails | null> {
   try {
-    const res = await fetch(`${DICT_API}/${encodeURIComponent(word)}`);
+    const res = await fetch(`${DICT_API}?word=${encodeURIComponent(word)}`);
     if (!res.ok) return null;
     const data: DictAPIResult[] = await res.json();
     if (!data.length) return null;
@@ -31,11 +33,11 @@ export async function fetchWordDetails(word: string): Promise<WordDetails | null
 
     for (const entry of data) {
       for (const meaning of entry.meanings) {
-        for (const def of meaning.definitions) {
-          for (const syn of def.synonyms || []) {
-            if (!synonyms.includes(syn)) synonyms.push(syn);
-          }
+        // 同义词在 meaning 级别
+        for (const syn of meaning.synonyms || []) {
+          if (!synonyms.includes(syn)) synonyms.push(syn);
         }
+        // 例句 + 释义
         for (const def of meaning.definitions) {
           if (def.example) {
             const clean = def.example.replace(new RegExp(word, "gi"), "___");

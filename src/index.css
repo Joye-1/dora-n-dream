@@ -64,6 +64,13 @@
            transition-colors duration-100;
   }
 
+  @keyframes flash-yellow {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: #fef08a; }
+  }
+  .flash-highlight {
+    animation: flash-yellow 0.5s ease-in-out 3;
+  }
   .card {
     @apply rounded-lg border border-notion-border dark:border-notion-border-dark
            bg-notion-bg dark:bg-notion-bg-dark p-4;

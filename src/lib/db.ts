@@ -21,6 +21,8 @@ export interface DailyWord {
   collins: number;
   bnc: number;
   frq: number;
+  mnemonic: string;
+  orderIndex?: number;
   createdAt?: string;
 }
 
@@ -132,4 +134,25 @@ export function getWeekStart(date: Date = new Date()): string {
 /** 获取今天日期 */
 export function getToday(): string {
   return new Date().toISOString().split("T")[0];
+}
+
+/** 修复旧数据：给没有 orderIndex 的单词分配递增序号 */
+export async function fixWordOrder() {
+  try {
+    const words = await db.dailyWords.toArray();
+    const needsFix = words.filter((w) => !w.orderIndex);
+    if (needsFix.length === 0) return;
+
+    // 找到已有序号最大值，从那里开始递增
+    let maxOrder = words.reduce((max, w) => Math.max(max, w.orderIndex || 0), 0);
+    for (const w of words) {
+      if (!w.orderIndex) {
+        maxOrder++;
+        await db.dailyWords.update(w.id!, { orderIndex: maxOrder });
+      }
+    }
+    console.log(`Fixed word order: ${needsFix.length} words`);
+  } catch (err) {
+    console.error("fixWordOrder:", err);
+  }
 }

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { searchSuggestions, type DictEntry } from "../lib/dict";
+import { searchSuggestions, searchWord, type DictEntry } from "../lib/dict";
 import { playPronunciation } from "../lib/pronunciation";
 
 interface Props {
@@ -46,19 +46,24 @@ export function WordInput({ onAdd }: Props) {
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
-  const handleManualAdd = () => {
+  const handleManualAdd = async () => {
     const word = query.trim();
     if (!word) return;
+    // 从本地词库查音标
+    const dictEntry = await searchWord(word);
     playPronunciation(word, 0);
     onAdd({
       word,
-      phonetic: manual.phonetic || "",
-      definition: "",
-      translation: manual.translation || "",
-      pos: manual.pos || "",
-      collins: 0, oxford: 0, bnc: 0, frq: 0,
-      tag: "manual",
-      exchange: "",
+      phonetic: manual.phonetic || dictEntry?.phonetic || "",
+      definition: dictEntry?.definition || "",
+      translation: manual.translation || dictEntry?.translation || "",
+      pos: manual.pos || dictEntry?.pos || "",
+      collins: dictEntry?.collins || 0,
+      oxford: dictEntry?.oxford || 0,
+      bnc: dictEntry?.bnc || 0,
+      frq: dictEntry?.frq || 0,
+      tag: (dictEntry?.tag || "") + " manual",
+      exchange: dictEntry?.exchange || "",
     });
     setQuery("");
     setManual({ word: "", phonetic: "", pos: "", translation: "" });
